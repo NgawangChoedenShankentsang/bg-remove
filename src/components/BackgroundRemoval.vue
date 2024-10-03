@@ -17,10 +17,10 @@
         />
         <label for="file-upload" class="upload-label">
           <div class="upload-content">
-            <p>Drag and drop images</p>
-            <p>or <span class="browse-text">browse to upload</span>.</p>
+            <p>Bilder ziehen und ablegen</p>
+            <p>oder <span class="browse-text">zum Hochladen durchsuchen.</span>.</p>
             <button class="upload-button" @click="triggerFileUpload">
-              <i class="fas fa-upload"></i> Upload your photos
+              <i class="fas fa-upload"></i> Fotos hochladen
             </button>
           </div>
         </label>
@@ -87,41 +87,52 @@
         const files = Array.from(event.dataTransfer.files);
         this.handleFiles(files);
       },
-      handleFiles(files) {
-        files.forEach(file => {
-          const image = {
-            file: file,
-            imageUrl: URL.createObjectURL(file),
-            resultUrl: null
-          };
-          this.images.push(image);
-          this.removeBackgroundHandler(image);
-        });
+      async handleFiles(files) {
+        // Start loading when files are dropped or selected
+        this.isLoading = true;
+        
+        // Process each file one by one using async/await
+        for (let file of files) {
+          await this.processSingleFile(file);  // Ensure each image is processed before moving to the next
+        }
+
+        // Once all files are processed
+        this.isLoading = false;
+        console.log("All images have been processed.");
       },
-      async removeBackgroundHandler(image) {
-        this.isLoading = true; // Start loading
+      async processSingleFile(file) {
+        const image = {
+          file: file,
+          imageUrl: URL.createObjectURL(file),
+          resultUrl: null
+        };
+        
+        // Add image to the list before processing
+        this.images.push(image);
+        
         try {
-          console.log("Starting background removal...");
+          console.log("Starting background removal for an image...");
           const config = {
             debug: true,
             device: 'gpu',
             model: 'medium',
             output: {
               format: 'image/png',
-              quality: 0.8,
-              type: 'foreground',
+              quality: 1,
+              type: 'background',
             },
           };
-          const blob = await removeBackground(image.file, config);
+          
+          const blob = await removeBackground(file, config);
           image.resultUrl = URL.createObjectURL(blob);
-          console.log("Background removal completed.");
+          console.log("Background removal completed for the image.");
+          
+          // Set the first image as selected by default
           if (this.selectedImage === null) {
             this.selectedImage = this.images.length - 1;
           }
         } catch (error) {
-          console.error("Background removal failed:", error);
-        } finally {
-          this.isLoading = false; // Stop loading
+          console.error("Background removal failed for an image:", error);
         }
       },
       selectImage(index) {
@@ -134,7 +145,7 @@
         } else if (this.selectedImage > index) {
           this.selectedImage--;
         }
-      },
+      }
     },
   };
   </script>
@@ -142,7 +153,6 @@
   <style scoped>
   .container {
     max-width: 1200px;
-    margin: 0 auto;
     padding: 20px;
   }
   
@@ -173,7 +183,7 @@
   }
   
   .browse-text {
-    color: #007bff;
+    color: #A8D45A;
     cursor: pointer;
   }
   
@@ -185,7 +195,7 @@
     padding: 10px 20px;
     font-size: 16px;
     color: #fff;
-    background-color: #007bff;
+    background-color: #A8D45A;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -196,7 +206,7 @@
   }
   
   .upload-button:hover {
-    background-color: #0056b3;
+    background-color: #779541;
   }
   
   .loading {
